@@ -40,14 +40,7 @@ public class PickUp : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (_soItem is SO_TeleportRing)
-            {
-                PlayerInventory.Instance.AddTeleport((SO_TeleportRing)_soItem);
-            }
-            else
-            {
-                PlayerInventory.Instance.AddItem(_soItem);
-            }
+            PlayerInventory.Instance.AddItem(_soItem);
             Destroy(gameObject);
         }
     }

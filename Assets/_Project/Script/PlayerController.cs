@@ -29,6 +29,6 @@ public class PlayerController : MonoBehaviour
             v /= lenght;
         }
 
-        _rb.velocity = transform.rotation * (new Vector3(h, 0f, v) * _speed);
+        _rb.MovePosition(_rb.position + transform.rotation * (new Vector3(h, 0f, v) * (_speed * Time.fixedDeltaTime)));
     }
 }

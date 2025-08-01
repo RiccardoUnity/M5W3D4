@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerInventory : MonoBehaviour
@@ -31,10 +30,13 @@ public class PlayerInventory : MonoBehaviour
     private static bool _isApplicationQuitting = false;
 
     private List<SO_Item> _items = new List<SO_Item>();
-    private List<SO_TeleportRing> _teleportItem = new List<SO_TeleportRing>();
 
     private IEnumerator _useOneTeleport;
+    private SO_TeleportRing _teleportRing;
+    private SO_Item _item;
+
     [SerializeField] private UIManager _uiManager;
+    [SerializeField] private GameObject _player;
 
     void Awake()
     {
@@ -48,10 +50,13 @@ public class PlayerInventory : MonoBehaviour
             Destroy(gameObject);
         }
 
-        //UIManager
         if (_uiManager == null)
         {
             _uiManager = FindAnyObjectByType<UIManager>();
+        }
+        if (_player == null)
+        {
+            _player = GameObject.FindWithTag("Player");
         }
     }
 
@@ -71,41 +76,79 @@ public class PlayerInventory : MonoBehaviour
 
     public void AddItem(SO_Item item) => _items.Add(item);
 
-    public void AddTeleport(SO_TeleportRing item) => _teleportItem.Add(item);
+    public SO_Item GetItemByInventory()
+    {
+        SO_Item item = null;
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (!(_items[i] is SO_TeleportRing))
+            {
+                item = _items[i];
+                break;
+            }
+        }
+        return item;
+    }
+
+    public SO_TeleportRing GetTeleportRingByInventory()
+    {
+        SO_TeleportRing teleportRing = null;
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (_items[i] is SO_TeleportRing)
+            {
+                teleportRing = (SO_TeleportRing)_items[i];
+                break;
+            }
+        }
+        return teleportRing;
+    }
 
     void Update()
     {
-        if (_items.Count > 0 && Input.GetKeyDown(KeyCode.Alpha1))
+        if (_items.Count > 0)
         {
-            _items[0].Use(gameObject);
-            _items.RemoveAt(0);
-        }
-        else if (_teleportItem.Count > 0 && Input.GetKeyDown(KeyCode.Alpha3) && _useOneTeleport == null)
-        {
-            TeleportEnter();
+            if (Input.GetKeyDown(KeyCode.Alpha3) && _useOneTeleport == null)
+            {
+                _teleportRing = GetTeleportRingByInventory();
+                if (_teleportRing != null)
+                {
+                    TeleportEnter();
+                }
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                _item = GetItemByInventory();
+                if (_item != null)
+                {
+                    _item.Use(_player);
+                    _items.Remove(_item);
+                }
+            }
         }
     }
 
     private void TeleportEnter()
     {
-        _useOneTeleport = _teleportItem[0].UseTeleportRing(gameObject);
+        _useOneTeleport = _teleportRing.UseTeleportRing(_player);
 
-        _teleportItem[0].onStart += _uiManager.SetActiveTime;
-        _teleportItem[0].onStay += _uiManager.SetTimeFill;
-        _teleportItem[0].onExit += _uiManager.SetActiveTime;
-        _teleportItem[0].onExit += TeleportExit;
+        _teleportRing.onStart += _uiManager.SetActiveTime;
+        _teleportRing.onStay += _uiManager.SetTimeFill;
+        _teleportRing.onExit += _uiManager.SetActiveTime;
+        _teleportRing.onExit += TeleportExit;
 
         StartCoroutine(_useOneTeleport);
     }
 
     public void TeleportExit(bool value)
     {
-        _teleportItem[0].onStart -= _uiManager.SetActiveTime;
-        _teleportItem[0].onStay -= _uiManager.SetTimeFill;
-        _teleportItem[0].onExit -= _uiManager.SetActiveTime;
-        _teleportItem[0].onExit -= TeleportExit;
+        _teleportRing.onStart -= _uiManager.SetActiveTime;
+        _teleportRing.onStay -= _uiManager.SetTimeFill;
+        _teleportRing.onExit -= _uiManager.SetActiveTime;
+        _teleportRing.onExit -= TeleportExit;
 
-        _teleportItem.RemoveAt(0);
+        _items.Remove(_teleportRing);
+        _teleportRing = null;
     }
 
     public void ResetUseOneTeleport() => _useOneTeleport = null;
